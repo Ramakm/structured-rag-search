@@ -1,0 +1,93 @@
+## Introduction to Retrieval-Augmented Generation
+
+Retrieval-Augmented Generation (RAG) is an architectural pattern that enhances language model outputs by grounding them in retrieved external knowledge. Instead of relying solely on knowledge encoded in model weights during pretraining, RAG systems retrieve relevant documents at inference time and include them in the model's context. This addresses three critical limitations of static LLMs: knowledge staleness (weights cannot be updated without retraining), hallucination (models generating plausible but false information), and context size limits.
+
+The original RAG paper (Lewis et al., 2020) fine-tuned a sequence-to-sequence model end-to-end with retrieval from Wikipedia using dense passage retrieval. Modern RAG systems are typically modular: a frozen LLM combined with a separately managed retrieval system. This modular design allows the knowledge base to be updated without retraining the LLM.
+
+RAG has become the dominant approach for enterprise AI applications where factual accuracy, source attribution, and up-to-date knowledge are required. Use cases include customer support bots, legal document analysis, medical question answering, and code search.
+
+## Document Processing and Chunking
+
+Before documents can be indexed, they must be split into chunks—smaller units that fit within the context of a single search query and don't overwhelm the LLM's context window. Chunking strategy critically affects retrieval quality.
+
+Fixed-size chunking splits documents into segments of N tokens with optional overlap. It is simple and predictable but may split sentences or paragraphs mid-thought, losing semantic coherence. Token-based chunking uses a tokenizer (e.g., tiktoken with the cl100k_base encoding for OpenAI models) to ensure chunks respect model token limits exactly.
+
+Semantic chunking uses natural language boundaries: sentence boundaries, paragraph boundaries, or section headings. This preserves semantic units but produces variable-length chunks. Sliding window approaches create overlapping chunks to ensure no information falls in a boundary gap.
+
+Hierarchical chunking creates a two-level representation: coarse-grained chunks (e.g., sections or paragraphs) for efficient coarse retrieval, and fine-grained chunks (e.g., sentences or small paragraphs) for precise context assembly. This mirrors how humans navigate documents—first identify the relevant section, then read the specific passage.
+
+Chunk size selection involves a tradeoff: smaller chunks are more precise and fit more in context, but lose surrounding context; larger chunks preserve context but reduce the number of results that fit and may dilute relevance. Typical sizes range from 256 to 1024 tokens. Overlap of 10–20% of chunk size helps bridge boundary gaps.
+
+## Vector Databases and Embedding Storage
+
+Vector databases are specialized data stores optimized for similarity search over high-dimensional dense vectors. They store embeddings alongside structured metadata (payload) and support approximate nearest neighbor (ANN) search with sub-linear time complexity.
+
+Qdrant is an open-source vector database written in Rust, designed for high-performance production deployments. Key features include: HNSW-based ANN indexing, payload (metadata) filtering, named vectors for multiple embedding spaces per point, on-disk indexing for large collections, and a REST/gRPC API. Collections in Qdrant hold points consisting of a numeric ID, a vector, and an optional JSON payload.
+
+HNSW (Hierarchical Navigable Small World) graphs enable approximate nearest neighbor search with O(log n) search complexity. The graph has multiple layers; upper layers provide long-range shortcuts while lower layers provide local precision. The ef_construction parameter controls index build quality; hnsw_ef controls search quality at query time.
+
+Payload filtering in Qdrant allows combining vector similarity search with structured metadata filters, evaluated during the ANN search rather than as a post-processing step. This is called filtered ANN or structured retrieval. Supported filter types include equality, range, geo, nested object, and full-text conditions, combinable with must/should/must_not logic.
+
+Payload indexes dramatically accelerate filter-heavy queries. Keyword indexes support equality and MatchAny filters; integer and float indexes support range filters; full-text indexes support text search. Creating payload indexes on frequently filtered fields (e.g., document_id, section_id, date) reduces query latency from O(n) scans to O(log n) lookups.
+
+Pinecone, Weaviate, Chroma, Milvus, and pgvector are alternative vector stores with different tradeoffs in scalability, latency, filtering capability, and operational complexity. Redis with the vector similarity module provides an in-memory option for low-latency applications.
+
+## Embedding Models
+
+Embeddings are dense vector representations of text that encode semantic meaning. The quality of embeddings is the single most important factor in retrieval accuracy. Two texts are considered semantically similar if their embedding vectors have high cosine similarity.
+
+OpenAI's text-embedding-3-small produces 1536-dimensional vectors and costs $0.02/million tokens. text-embedding-3-large produces 3072-dimensional vectors for higher accuracy at 5× the cost. Both support Matryoshka Representation Learning (MRL), allowing truncation to smaller dimensions (e.g., 256 or 512) with graceful accuracy degradation.
+
+Sentence-Transformers is an open-source library providing a large catalog of pretrained embedding models. all-MiniLM-L6-v2 is a fast 384-dimensional model for English text. E5-large-v2 and BGE-large-en-v1.5 are state-of-the-art open models comparable to commercial embeddings. Nomic-embed-text-v1.5 is optimized for long documents up to 8192 tokens.
+
+The MTEB (Massive Text Embedding Benchmark) evaluates embedding models across retrieval, clustering, classification, semantic similarity, and reranking tasks. The leaderboard is the standard reference for selecting embedding models.
+
+Cross-encoders rerank retrieved candidates by scoring each (query, document) pair jointly rather than independently encoding query and document. They are slower (O(k) LLM calls for top-k candidates) but more accurate than bi-encoders. A common pattern is to retrieve 20–50 candidates with a fast bi-encoder, then rerank with a cross-encoder to select the top 5.
+
+## Retrieval Strategies
+
+Naive RAG retrieves the top-K most similar chunks using cosine similarity, constructs a context string, and generates an answer. This is the baseline but suffers from precision issues when the corpus is large and diverse.
+
+Hybrid retrieval combines dense vector search (semantic similarity) with sparse BM25 search (keyword matching). Dense retrieval is strong for paraphrase matching and conceptual similarity; BM25 is strong for exact term matching and rare vocabulary. Reciprocal rank fusion (RRF) is a simple, parameter-free method for combining ranked lists.
+
+Hypothetical document embedding (HyDE) uses an LLM to generate a hypothetical answer to the query, then retrieves documents similar to the hypothetical answer. This can improve retrieval recall when the query and relevant documents have low surface-form overlap.
+
+Contextual compression summarizes or extracts only the relevant portions of retrieved chunks before including them in the context. This reduces context length and focuses the LLM on relevant content, but adds a compression step that increases latency.
+
+Self-querying retrieval uses an LLM to parse the user's natural language query into a structured retrieval request with metadata filters. For example, "What papers did Vaswani publish in 2017?" becomes a vector search combined with a filter for year=2017 and author contains "Vaswani." This dramatically improves precision for structured queries.
+
+Multi-vector retrieval indexes documents under multiple query types (e.g., a detailed chunk embedding and a summary embedding), then retrieves the best chunk for the query type. ColBERT uses late interaction: it stores per-token embeddings and computes the MaxSim score at query time, achieving high accuracy at the cost of higher storage.
+
+## Two-Step Hierarchical Retrieval
+
+Two-step retrieval (also called coarse-to-fine retrieval) first retrieves relevant sections using coarse embeddings, then retrieves specific chunks within those sections using fine embeddings with payload filtering. This mirrors the natural document structure and significantly reduces the search space at the fine stage.
+
+In step one, each section is embedded using its title and a truncated version of its content. The query is embedded and compared to all section vectors. The top-K_coarse sections are identified (typically 2–5). This step runs a global search over all sections and takes O(n_sections) or O(log n_sections) with HNSW.
+
+In step two, the query embedding is compared only to chunks that belong to the selected sections, using a payload filter on section_id. Because the filter reduces the candidate set from all chunks to only those in K_coarse sections, both search accuracy and latency improve. Qdrant's filtered ANN evaluates the filter during graph traversal, not after.
+
+Compared to standard RAG, two-step retrieval reduces input token usage by focusing context on highly relevant chunks. Compared to full-context prompting, it reduces cost by 60–90% while maintaining or improving answer quality, since the LLM is no longer distracted by irrelevant document portions.
+
+The key insight is that section-level structure encodes topical coherence: sections group chunks that discuss the same topic. By using this structure as a pre-filter, the fine search inherits topical focus without explicit topic modeling.
+
+## Generation and Prompting
+
+Once context is assembled, a system prompt and user message are constructed and sent to an LLM. Prompt design significantly affects answer quality. Key elements include: clear instructions ("Answer using ONLY the provided context"), explicit handling of the not-found case ("If the answer is not in the context, say so"), and a consistent format (bullet points, prose, or structured JSON).
+
+Chain-of-thought (CoT) prompting instructs the model to reason step-by-step before giving the final answer. For complex multi-hop questions, CoT reduces errors. However, it increases output token count (and cost) and latency.
+
+Prompt caching, supported by Anthropic and OpenAI, allows repeating a prefix (e.g., the system prompt + static context) across multiple requests at reduced cost. For RAG applications with a fixed system prompt and static knowledge base, caching the prompt prefix can reduce effective input token costs by 80–90%.
+
+Response grounding verification—checking whether the generated answer is supported by the retrieved context—is an emerging technique to reduce hallucinations. Self-consistency sampling generates multiple answers and selects the most consistent one, but multiplies inference cost.
+
+## Evaluation and Benchmarking
+
+Evaluating RAG systems requires assessing both retrieval quality and generation quality separately and end-to-end.
+
+Retrieval metrics include: Recall@K (fraction of relevant documents in the top-K results), Precision@K (fraction of top-K results that are relevant), Mean Average Precision (MAP), and Normalized Discounted Cumulative Gain (NDCG, which weights highly-ranked relevant results more).
+
+Generation metrics for open-domain QA include: Exact Match (EM, strict string equality), Token F1 (word overlap between prediction and reference), BERTScore (cosine similarity of contextual embeddings), ROUGE-1/2/L (n-gram overlap). For open-ended generation, LLM-as-judge evaluates faithfulness (is the answer supported by context?), relevance, and coherence.
+
+RAGAS (Retrieval-Augmented Generation Assessment) is a framework for automated RAG evaluation using four metrics: faithfulness, answer relevancy, context precision, and context recall—all measured without human labels by prompting an LLM.
+
+Cost and latency are first-class metrics for production RAG systems. Token cost = (input_tokens × input_price + output_tokens × output_price). For a 100-user system running 1,000 queries/day, even a 50% reduction in input tokens saves hundreds of dollars monthly. Latency is decomposed into retrieval latency (embedding + ANN search) and generation latency (LLM inference).

@@ -1,0 +1,65 @@
+## Introduction to Machine Learning
+
+Machine learning is a subfield of artificial intelligence that enables systems to learn and improve from experience without being explicitly programmed. The core idea is to give computers the ability to learn from data, identify patterns, and make decisions with minimal human intervention. Unlike traditional rule-based programming, where developers encode explicit logic, machine learning algorithms build mathematical models from training data to perform tasks and make predictions.
+
+The history of machine learning spans several decades. In the 1950s, Alan Turing proposed the concept of a "learning machine." By the 1980s, backpropagation made training neural networks practical. The 2010s saw the deep learning revolution, driven by large datasets, powerful GPUs, and architectural innovations. Today, ML powers everything from spam filters to protein structure prediction.
+
+## Types of Machine Learning
+
+Machine learning is broadly categorized into three paradigms based on the nature of the training signal.
+
+Supervised learning is the most widely used form. The algorithm learns a mapping from inputs to outputs using labeled training data—pairs of (input, desired output). The goal is to generalize: to correctly label unseen inputs after training. Common supervised tasks include classification (predict a discrete label) and regression (predict a continuous value). Examples include email spam detection, house price prediction, and medical diagnosis.
+
+Unsupervised learning deals with unlabeled data. The algorithm discovers hidden structure without explicit guidance. Clustering algorithms group similar data points together; K-means and DBSCAN are classic examples. Dimensionality reduction techniques like PCA and t-SNE compress high-dimensional data into lower-dimensional representations. Unsupervised learning is useful for exploratory data analysis and feature learning.
+
+Reinforcement learning trains an agent to make sequential decisions by rewarding desirable behavior. The agent interacts with an environment, observing states and taking actions. Over time it learns a policy—a mapping from states to actions—that maximizes cumulative reward. RL has achieved superhuman performance in games (AlphaGo, Atari), and is used in robotics, recommendation systems, and trading algorithms.
+
+Semi-supervised learning sits between supervised and unsupervised: a small amount of labeled data is combined with a large pool of unlabeled data. Self-supervised learning, a related paradigm, generates supervisory signals from the data itself (e.g., predicting masked tokens in BERT).
+
+## Core Algorithms
+
+Linear regression is the simplest predictive model. It assumes a linear relationship between input features and a continuous output. The model is parameterized by a weight vector w and a bias b: ŷ = wᵀx + b. Training minimizes mean squared error (MSE) via closed-form solution (normal equations) or gradient descent.
+
+Logistic regression extends linear regression to binary classification. Instead of outputting a real number, it outputs a probability via the sigmoid function: P(y=1|x) = σ(wᵀx + b) = 1/(1 + exp(−wᵀx − b)). Training minimizes binary cross-entropy loss using gradient descent. Despite its name, logistic regression is a classification algorithm.
+
+Decision trees partition the feature space into regions using axis-aligned splits. Each internal node tests a feature value; each leaf node holds a prediction. Trees are trained by greedily selecting splits that maximize information gain (classification) or minimize variance (regression). They are interpretable but prone to overfitting.
+
+Random forests combine hundreds of decision trees trained on bootstrapped data subsets, with a random subset of features considered at each split. Predictions are averaged (regression) or voted (classification). The ensemble reduces variance through diversity, achieving far better generalization than a single tree.
+
+Support vector machines (SVMs) find the maximum-margin hyperplane that separates classes. The training objective maximizes the margin—the distance from the hyperplane to the nearest data points (support vectors). The kernel trick allows SVMs to efficiently learn nonlinear boundaries by implicitly mapping data to high-dimensional feature spaces.
+
+Gradient boosting builds an ensemble of weak learners (typically decision trees) sequentially. Each new model corrects the errors of the combined ensemble so far by fitting the residuals. XGBoost, LightGBM, and CatBoost are high-performance implementations that dominate tabular data competitions.
+
+## Neural Networks and Deep Learning
+
+A neural network is a function composed of layers of parameterized linear transformations interleaved with nonlinear activations. The fundamental building block is the neuron: it computes a weighted sum of its inputs, adds a bias, and applies an activation function. Common activations include ReLU (max(0, x)), sigmoid, and tanh.
+
+A feedforward neural network (also called a multilayer perceptron or MLP) has an input layer, one or more hidden layers, and an output layer. Information flows forward from input to output; there are no cycles. Training uses backpropagation: the chain rule of calculus is applied to compute gradients of the loss with respect to all parameters, which are then updated via gradient descent (or an optimizer like Adam or RMSProp).
+
+Convolutional neural networks (CNNs) are specialized for grid-structured data like images. Convolutional layers apply learned filters across spatial positions, sharing parameters and exploiting translation invariance. Pooling layers reduce spatial dimensions. Deep CNNs like ResNet, VGG, and EfficientNet achieve state-of-the-art image classification, object detection, and segmentation.
+
+Recurrent neural networks (RNNs) process sequential data by maintaining a hidden state that is updated at each time step. Long short-term memory (LSTM) units and gated recurrent units (GRUs) address the vanishing gradient problem by introducing gating mechanisms that control information flow. RNNs are used for language modeling, speech recognition, and time series forecasting.
+
+Batch normalization normalizes layer activations to zero mean and unit variance during training, then applies learned scale and shift parameters. It accelerates training, allows higher learning rates, and acts as a regularizer. Layer normalization, a variant, normalizes across features rather than the batch dimension and is preferred in transformers.
+
+Dropout is a regularization technique that randomly zeroes out neurons during training with probability p (typically 0.1–0.5). At inference, all neurons are active and outputs are scaled by (1−p). Dropout prevents co-adaptation of neurons and reduces overfitting.
+
+## Training and Optimization
+
+The training loop iterates over mini-batches of data. For each batch, the model produces predictions, a loss is computed (e.g., cross-entropy for classification, MSE for regression), gradients are computed via backpropagation, and parameters are updated using an optimizer.
+
+Stochastic gradient descent (SGD) updates parameters in the direction that decreases loss: θ ← θ − η∇L(θ), where η is the learning rate. SGD with momentum accumulates a velocity vector in directions of persistent gradient, dampening oscillations and accelerating convergence.
+
+Adam (Adaptive Moment Estimation) maintains per-parameter learning rates adapted from estimates of first and second moments of the gradients. It combines the benefits of momentum and RMSProp and is the default optimizer for most deep learning tasks.
+
+Learning rate scheduling reduces the learning rate over time. Common schedules include step decay (multiply by a factor every N epochs), cosine annealing (smoothly decrease to near zero), and warm restarts (periodically reset the schedule). Warmup—starting with a low learning rate and increasing it—is used in transformer training to avoid early instability.
+
+Overfitting occurs when a model fits training data too closely and fails to generalize to unseen data. Mitigation strategies include: collecting more data, data augmentation (applying random transformations to training examples), regularization (L1/L2 weight penalties), dropout, early stopping (halt training when validation loss plateaus), and model compression (pruning, quantization).
+
+## Evaluation Metrics
+
+Selecting the right metric depends on the task and class distribution. Accuracy (fraction of correct predictions) is misleading for imbalanced datasets. Precision (true positives / predicted positives) measures exactness; recall (true positives / actual positives) measures completeness. The F1 score is their harmonic mean. Area under the ROC curve (AUC-ROC) measures discrimination across all classification thresholds.
+
+For regression: mean absolute error (MAE), mean squared error (MSE), root mean squared error (RMSE), and R² (coefficient of determination, how much variance the model explains) are standard. For ranking and retrieval: precision@K, recall@K, mean average precision (MAP), and NDCG are widely used.
+
+Cross-validation estimates generalization performance by partitioning data into K folds, training on K−1 folds, and evaluating on the held-out fold, repeating K times and averaging the scores. K=5 or K=10 is typical. Stratified k-fold preserves the class distribution in each fold.

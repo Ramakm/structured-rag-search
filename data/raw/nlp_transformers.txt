@@ -1,0 +1,77 @@
+## Introduction to Natural Language Processing
+
+Natural Language Processing (NLP) is the branch of AI concerned with enabling computers to understand, generate, and manipulate human language. Language is inherently ambiguous, context-dependent, and compositional, making NLP one of the most challenging areas of AI. Applications span machine translation, sentiment analysis, question answering, summarization, dialogue systems, and information extraction.
+
+Early NLP systems relied on hand-crafted rules and linguistic grammars. Statistical NLP, dominant from the 1990s to 2010s, used probabilistic models like n-gram language models, hidden Markov models, and conditional random fields. The deep learning era, starting around 2013 with word2vec, fundamentally changed the field by enabling dense distributed representations of words and contexts.
+
+## Word Embeddings
+
+Word embeddings map vocabulary items to dense real-valued vectors in a continuous space. The central hypothesis is the distributional hypothesis: words that appear in similar contexts have similar meanings. Embeddings encode semantic and syntactic relationships geometrically: "king − man + woman ≈ queen."
+
+Word2Vec (2013) trains shallow neural networks with two architectures: CBOW predicts a word from its context; Skip-gram predicts context words from a target word. Training uses negative sampling—a contrastive objective that pushes target word representations toward context words and away from randomly sampled "noise" words.
+
+GloVe (Global Vectors) trains embeddings by factorizing the log of the word co-occurrence matrix. The objective balances co-occurrence counts with a weighting function that downweights very common and very rare co-occurrences. GloVe vectors capture both local context (like Word2Vec) and global corpus statistics.
+
+FastText extends Word2Vec by representing words as bags of character n-grams. This allows the model to generate embeddings for out-of-vocabulary words by summing n-gram vectors. FastText is particularly effective for morphologically rich languages.
+
+The limitation of static embeddings is that each word has a single representation regardless of context. "Bank" the financial institution and "bank" the river edge have identical vectors in Word2Vec. Contextualized embeddings address this by producing representations that depend on the surrounding sentence.
+
+## The Transformer Architecture
+
+The Transformer (Vaswani et al., "Attention Is All You Need," 2017) replaced recurrent architectures with self-attention mechanisms, enabling massive parallelization during training. It became the dominant architecture for NLP and has since been extended to vision, audio, and multimodal tasks.
+
+The Transformer has an encoder-decoder structure. The encoder maps a source sequence to a sequence of continuous representations. The decoder generates the target sequence one token at a time, attending to both its own previous outputs and the encoder representations.
+
+Self-attention computes attention scores between every pair of positions in a sequence. Given queries Q, keys K, and values V (all linear projections of the input), attention is: Attention(Q, K, V) = softmax(QKᵀ / √d_k) V. The scaling factor √d_k prevents the dot products from growing too large in high dimensions, stabilizing gradients.
+
+Multi-head attention runs h parallel attention heads with different learned projections, then concatenates and linearly projects the outputs. Each head can attend to different aspects of the sequence (syntax, coreference, semantics). Typically h=8 or h=16 heads are used.
+
+Positional encodings inject sequence order information because self-attention is permutation-invariant. The original Transformer uses sine/cosine functions of position and dimension index. Learned positional embeddings, relative position encodings (e.g., T5's relative bias), and rotary position embeddings (RoPE, used in LLaMA) are popular alternatives.
+
+The feedforward sublayer applies two linear transformations with a ReLU activation: FFN(x) = max(0, xW₁ + b₁)W₂ + b₂. Its dimension (typically 4× the model dimension) provides the majority of model capacity. SwiGLU and GeGLU are gated variants that improve performance at the cost of slightly more parameters.
+
+Layer normalization and residual connections are applied around each sublayer (Pre-LN: normalize before; Post-LN: normalize after). Pre-LN training is more stable and is used in most modern models.
+
+## BERT and the Encoder Paradigm
+
+BERT (Bidirectional Encoder Representations from Transformers, Devlin et al., 2018) introduced the masked language model (MLM) pretraining objective. Fifteen percent of tokens are randomly masked; the model predicts the original tokens using bidirectional context. BERT also trained with next-sentence prediction (NSP), though later work showed NSP is less important.
+
+BERT demonstrated that a single pretrained encoder could be fine-tuned on diverse downstream tasks with minimal task-specific architecture changes. Fine-tuning adds a small task head (e.g., a linear classifier on the [CLS] token) and trains all parameters end-to-end on labeled data.
+
+RoBERTa improved BERT by training longer on more data, using dynamic masking, removing NSP, and training with larger batch sizes. ALBERT reduced model size via cross-layer parameter sharing and factorized embedding parameterization. DeBERTa uses disentangled attention to separately encode content and position, achieving strong benchmark results.
+
+Sentence-BERT (SBERT) produces semantically meaningful sentence-level embeddings using siamese networks and a contrastive objective, enabling efficient semantic similarity computation without cross-encoding every pair.
+
+## GPT and the Decoder Paradigm
+
+GPT (Generative Pre-trained Transformer, OpenAI 2018) uses a unidirectional (causal) language model objective: predict the next token given all previous tokens. This autoregressive pretraining captures rich syntactic and semantic patterns.
+
+GPT-2 (2019) demonstrated that a sufficiently large language model trained on diverse web text exhibits surprisingly capable zero-shot behavior on tasks like translation and summarization—without any fine-tuning. The scaling hypothesis emerged: larger models + more data + more compute = better performance, often predictably following power laws.
+
+GPT-3 (Brown et al., 2020) scaled to 175 billion parameters. Its key contribution was demonstrating in-context learning: a few task examples provided in the prompt (few-shot learning) dramatically improved zero-shot performance, suggesting that very large LMs implicitly store task knowledge and can retrieve it via prompting.
+
+Instruction tuning (InstructGPT, Ouyang et al., 2022) fine-tunes LLMs on human-written demonstrations and reinforcement learning from human feedback (RLHF). The reward model is trained to predict human preferences between model outputs, and the LLM is fine-tuned with PPO to maximize predicted preference scores. This dramatically improves instruction following and harmlessness.
+
+## Tokenization
+
+Tokenization converts raw text to sequences of integers (token IDs) that models can process. Byte pair encoding (BPE) starts with individual characters, then iteratively merges the most frequent consecutive pair into a new subword token. GPT-2, GPT-3, and GPT-4 use BPE.
+
+WordPiece (used in BERT) is similar to BPE but selects merges that maximize the likelihood of the training corpus under a unigram language model. SentencePiece trains tokenization models directly on raw text without language-specific preprocessing, handling multiple scripts and whitespace as first-class tokens.
+
+Vocabulary size typically ranges from 30,000 to 100,000 tokens. A larger vocabulary means fewer tokens per document (lower sequence lengths) at the cost of larger embedding matrices.
+
+## Attention Efficiency and Long Context
+
+Standard self-attention has O(n²) time and memory complexity in sequence length n, limiting practical context windows to a few thousand tokens. FlashAttention (Dao et al., 2022) reorganizes attention computation to exploit GPU memory hierarchy (SRAM vs. HBM), achieving the same result as standard attention in O(n√n) memory and 2–4× wall-clock speedup.
+
+Sparse attention patterns (Longformer, BigBird) restrict each token to attending to a local window plus a few global tokens, reducing complexity to O(n). Sliding window attention with dilation further extends the effective receptive field.
+
+Rotary position embeddings (RoPE) support length extrapolation: a model trained on 2,048 tokens can generalize to longer sequences by adjusting the base frequency. YaRN and context-window scaling techniques extend the effective context window of deployed models without full retraining.
+
+## Key Benchmarks in NLP
+
+GLUE (General Language Understanding Evaluation) and SuperGLUE aggregate diverse classification and inference tasks to measure general language understanding. SQuAD tests extractive reading comprehension. MMLU (Massive Multitask Language Understanding) tests knowledge across 57 academic subjects.
+
+BIG-Bench evaluates capabilities that are difficult for current models; BIG-Bench Hard focuses on tasks where chain-of-thought prompting is necessary to approach human performance. HumanEval and MBPP measure code generation ability on programming tasks.
+
+HellaSwag and WinoGrande test commonsense reasoning; TruthfulQA measures the tendency to generate misinformation. These benchmarks collectively profile different capability axes of language models.
