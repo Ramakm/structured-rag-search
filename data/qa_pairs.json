@@ -1,0 +1,92 @@
+[
+  {
+    "question": "What is the difference between supervised and unsupervised learning?",
+    "expected_answer": "Supervised learning uses labeled data to learn a mapping from inputs to outputs, while unsupervised learning finds hidden structure in unlabeled data through techniques like clustering and dimensionality reduction.",
+    "keywords": ["labeled", "unlabeled", "clustering", "outputs", "structure"],
+    "category": "ml_basics"
+  },
+  {
+    "question": "How does gradient boosting work and what are popular implementations?",
+    "expected_answer": "Gradient boosting builds an ensemble of weak learners sequentially, where each new model corrects the errors of the combined ensemble by fitting the residuals. Popular implementations include XGBoost, LightGBM, and CatBoost.",
+    "keywords": ["ensemble", "weak learners", "residuals", "XGBoost", "LightGBM", "CatBoost"],
+    "category": "ml_algorithms"
+  },
+  {
+    "question": "What is the Adam optimizer and how does it differ from SGD?",
+    "expected_answer": "Adam maintains per-parameter learning rates adapted from estimates of first and second moments of the gradients, combining the benefits of momentum and RMSProp. SGD updates parameters by moving in the direction that decreases loss using a fixed learning rate.",
+    "keywords": ["per-parameter", "moments", "momentum", "RMSProp", "learning rate"],
+    "category": "optimization"
+  },
+  {
+    "question": "Explain how the Transformer's self-attention mechanism works.",
+    "expected_answer": "Self-attention computes attention scores between every pair of positions using queries, keys, and values that are linear projections of the input. The formula is softmax(QK^T / sqrt(d_k)) * V. The scaling factor sqrt(d_k) prevents dot products from growing too large.",
+    "keywords": ["queries", "keys", "values", "softmax", "scaling", "d_k"],
+    "category": "transformers"
+  },
+  {
+    "question": "What is BERT and what pretraining objective does it use?",
+    "expected_answer": "BERT is a bidirectional encoder model that uses the masked language model pretraining objective, where 15% of tokens are randomly masked and the model predicts the original tokens using bidirectional context. It also used next-sentence prediction during pretraining.",
+    "keywords": ["bidirectional", "masked language model", "15%", "next-sentence prediction", "fine-tuned"],
+    "category": "bert_gpt"
+  },
+  {
+    "question": "What is RLHF and how was it used in InstructGPT?",
+    "expected_answer": "RLHF (Reinforcement Learning from Human Feedback) trains a reward model to predict human preferences between model outputs, then fine-tunes the LLM with PPO to maximize predicted preference scores. InstructGPT used RLHF to dramatically improve instruction following and harmlessness.",
+    "keywords": ["reward model", "human preferences", "PPO", "instruction following", "harmlessness"],
+    "category": "bert_gpt"
+  },
+  {
+    "question": "How does byte pair encoding (BPE) tokenization work?",
+    "expected_answer": "BPE starts with individual characters, then iteratively merges the most frequent consecutive pair into a new subword token. GPT-2, GPT-3, and GPT-4 use BPE. Vocabulary sizes typically range from 30,000 to 100,000 tokens.",
+    "keywords": ["characters", "merges", "frequent", "subword", "vocabulary"],
+    "category": "tokenization"
+  },
+  {
+    "question": "What is RAG and what limitations of LLMs does it address?",
+    "expected_answer": "RAG (Retrieval-Augmented Generation) enhances LLMs by retrieving external knowledge at inference time. It addresses three limitations: knowledge staleness (weights cannot be updated without retraining), hallucination, and context size limits.",
+    "keywords": ["retrieval", "knowledge staleness", "hallucination", "context size", "external knowledge"],
+    "category": "rag_basics"
+  },
+  {
+    "question": "What is two-step hierarchical retrieval and how does it differ from standard RAG?",
+    "expected_answer": "Two-step retrieval first retrieves relevant sections using coarse embeddings, then retrieves specific chunks within those sections using payload filtering. Standard RAG uses flat vector search over all chunks. Two-step RAG reduces input token usage and improves precision by focusing context on relevant sections.",
+    "keywords": ["coarse", "fine", "payload filtering", "section_id", "search space"],
+    "category": "rag_advanced"
+  },
+  {
+    "question": "What is Qdrant and what are its key features for RAG systems?",
+    "expected_answer": "Qdrant is an open-source vector database written in Rust. Key features include HNSW-based ANN indexing, payload filtering (combining vector similarity with metadata filters), named vectors for multiple embedding spaces, on-disk indexing, and REST/gRPC API.",
+    "keywords": ["Rust", "HNSW", "payload filtering", "ANN", "collections"],
+    "category": "vector_db"
+  },
+  {
+    "question": "What is hybrid retrieval and how does reciprocal rank fusion work?",
+    "expected_answer": "Hybrid retrieval combines dense vector search (semantic similarity) with sparse BM25 search (keyword matching). Reciprocal rank fusion (RRF) is a parameter-free method for combining ranked lists from different retrieval methods.",
+    "keywords": ["dense", "BM25", "sparse", "reciprocal rank fusion", "semantic"],
+    "category": "rag_advanced"
+  },
+  {
+    "question": "Explain FlashAttention and why it is needed.",
+    "expected_answer": "FlashAttention reorganizes attention computation to exploit GPU memory hierarchy (SRAM vs HBM), achieving the same result as standard attention in O(n*sqrt(n)) memory with 2-4x wall-clock speedup. It is needed because standard self-attention has O(n^2) time and memory complexity, limiting practical context windows.",
+    "keywords": ["GPU memory", "SRAM", "HBM", "O(n^2)", "speedup", "context window"],
+    "category": "transformers"
+  },
+  {
+    "question": "What are payload indexes in Qdrant and why should you use them?",
+    "expected_answer": "Payload indexes accelerate filter-heavy queries by reducing O(n) scans to O(log n) lookups. Keyword indexes support equality and MatchAny filters; integer and float indexes support range filters. Creating indexes on frequently filtered fields like document_id and section_id improves query latency.",
+    "keywords": ["O(log n)", "keyword indexes", "range filters", "section_id", "latency"],
+    "category": "vector_db"
+  },
+  {
+    "question": "What chunking strategies exist and what are the tradeoffs?",
+    "expected_answer": "Fixed-size chunking splits on token count with optional overlap — simple but may break semantic units. Semantic chunking uses sentence or paragraph boundaries, preserving meaning but with variable lengths. Hierarchical chunking creates two levels (section + chunk) for coarse-to-fine retrieval. Typical chunk sizes are 256-1024 tokens with 10-20% overlap.",
+    "keywords": ["fixed-size", "semantic", "hierarchical", "overlap", "token count", "boundaries"],
+    "category": "rag_basics"
+  },
+  {
+    "question": "What metrics are used to evaluate neural networks, and when should you use F1 instead of accuracy?",
+    "expected_answer": "Common metrics include accuracy, precision, recall, F1 score, AUC-ROC, MAE, MSE, RMSE, and R-squared. F1 (harmonic mean of precision and recall) should be used instead of accuracy when the dataset is imbalanced, because accuracy is misleading when one class dominates.",
+    "keywords": ["precision", "recall", "F1", "imbalanced", "AUC-ROC", "accuracy"],
+    "category": "ml_basics"
+  }
+]
