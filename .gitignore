@@ -7,3 +7,4 @@ data/processed/
 reports/
 .venv/
 venv/
+.vulnerabilityx_venv
